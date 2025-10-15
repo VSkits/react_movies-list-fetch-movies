@@ -1,10 +1,67 @@
-import React from 'react';
+import React, { FormEvent, useState } from 'react';
 import './FindMovie.scss';
+import { getMovie } from '../../api';
+import { MovieData } from '../../types/MovieData';
+import { Movie } from '../../types/Movie';
+import { MovieCard } from '../MovieCard';
 
-export const FindMovie: React.FC = () => {
+type Props = {
+  onAdd: (movie: Movie) => boolean;
+};
+
+const DEFAULT_POSTER =
+  'https://via.placeholder.com/360x270.png?text=no%20preview';
+
+const normalizeMovie = (data: MovieData): Movie => ({
+  imdbId: data.imdbID,
+  title: data.Title,
+  description: data.Plot,
+  imgUrl: data.Poster && data.Poster !== 'N|A' ? data.Poster : DEFAULT_POSTER,
+  imdbUrl: `https://www.imdb.com/title/${data.imdbID}`,
+});
+
+export const FindMovie: React.FC<Props> = ({ onAdd }) => {
+  const [title, setTitle] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [preview, setPreview] = useState<Movie | null>(null);
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+
+    setIsLoading(true);
+    setErrorMessage('');
+    setPreview(null);
+
+    try {
+      const res = await getMovie(title.trim());
+
+      if (!res || 'Error' in res) {
+        setErrorMessage(`Can't find a movie with such a title`);
+      } else {
+        setPreview(normalizeMovie(res as MovieData));
+      }
+    } catch {
+      setErrorMessage(`Can't find a movie with such a title`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleAdd = () => {
+    if (!preview) {
+      return;
+    }
+
+    onAdd(preview);
+    setTitle('');
+    setPreview(null);
+    setErrorMessage('');
+  };
+
   return (
     <>
-      <form className="find-movie">
+      <form className="find-movie" onSubmit={handleSubmit}>
         <div className="field">
           <label className="label" htmlFor="movie-title">
             Movie title
@@ -16,13 +73,21 @@ export const FindMovie: React.FC = () => {
               type="text"
               id="movie-title"
               placeholder="Enter a title to search"
-              className="input is-danger"
+              className={`input  ${errorMessage ? 'is-danger' : ''}`}
+              onChange={e => {
+                setTitle(e.target.value);
+                if (errorMessage) {
+                  setErrorMessage('');
+                }
+              }}
             />
           </div>
 
-          <p className="help is-danger" data-cy="errorMessage">
-            Can&apos;t find a movie with such a title
-          </p>
+          {errorMessage && (
+            <p className="help is-danger" data-cy="errorMessage">
+              {errorMessage}
+            </p>
+          )}
         </div>
 
         <div className="field is-grouped">
@@ -30,27 +95,31 @@ export const FindMovie: React.FC = () => {
             <button
               data-cy="searchButton"
               type="submit"
-              className="button is-light"
+              className={`button is-light ${isLoading ? 'is-loading' : ''}`}
+              disabled={!title.trim()}
             >
               Find a movie
             </button>
           </div>
 
-          <div className="control">
-            <button
-              data-cy="addButton"
-              type="button"
-              className="button is-primary"
-            >
-              Add to the list
-            </button>
-          </div>
+          {preview && (
+            <div className="control">
+              <button
+                data-cy="addButton"
+                type="button"
+                className="button is-primary"
+                onClick={handleAdd}
+              >
+                Add to the list
+              </button>
+            </div>
+          )}
         </div>
       </form>
 
       <div className="container" data-cy="previewContainer">
         <h2 className="title">Preview</h2>
-        {/* <MovieCard movie={movie} /> */}
+        {preview && <MovieCard movie={preview} />}
       </div>
     </>
   );

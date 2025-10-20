@@ -16,7 +16,7 @@ const normalizeMovie = (data: MovieData): Movie => ({
   imdbId: data.imdbID,
   title: data.Title,
   description: data.Plot,
-  imgUrl: data.Poster && data.Poster !== 'N|A' ? data.Poster : DEFAULT_POSTER,
+  imgUrl: data.Poster && data.Poster !== 'N/A' ? data.Poster : DEFAULT_POSTER,
   imdbUrl: `https://www.imdb.com/title/${data.imdbID}`,
 });
 

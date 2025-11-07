@@ -8,19 +8,13 @@ export const App = () => {
   const [movies, setMovies] = useState<Movie[]>([]);
 
   const handleAdd = (movie: Movie) => {
-    let added = false;
+    if (movies.some(m => m.imdbId === movie.imdbId)) {
+      return false;
+    }
 
-    setMovies(prev => {
-      if (prev.some(m => m.imdbId === movie.imdbId)) {
-        return prev;
-      }
+    setMovies(prev => [...prev, movie]);
 
-      added = true;
-
-      return [...prev, movie];
-    });
-
-    return added;
+    return true;
   };
 
   return (

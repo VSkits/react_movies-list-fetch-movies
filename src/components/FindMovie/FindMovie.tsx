@@ -29,6 +29,10 @@ export const FindMovie: React.FC<Props> = ({ onAdd }) => {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
 
+    if (!title.trim()) {
+      return;
+    }
+
     setIsLoading(true);
     setErrorMessage('');
     setPreview(null);
@@ -36,7 +40,11 @@ export const FindMovie: React.FC<Props> = ({ onAdd }) => {
     try {
       const res = await getMovie(title.trim());
 
-      if (!res || 'Error' in res) {
+      if (
+        !res ||
+        (typeof res === 'object' && 'Error' in res) ||
+        !(res as MovieData).imdbID
+      ) {
         setErrorMessage(`Can't find a movie with such a title`);
       } else {
         setPreview(normalizeMovie(res as MovieData));
@@ -74,6 +82,7 @@ export const FindMovie: React.FC<Props> = ({ onAdd }) => {
               id="movie-title"
               placeholder="Enter a title to search"
               className={`input  ${errorMessage ? 'is-danger' : ''}`}
+              value={title}
               onChange={e => {
                 setTitle(e.target.value);
                 if (errorMessage) {
@@ -117,10 +126,12 @@ export const FindMovie: React.FC<Props> = ({ onAdd }) => {
         </div>
       </form>
 
-      <div className="container" data-cy="previewContainer">
-        <h2 className="title">Preview</h2>
-        {preview && <MovieCard movie={preview} />}
-      </div>
+      {preview && (
+        <div className="container" data-cy="previewContainer">
+          <h2 className="title">Preview</h2>
+          <MovieCard movie={preview} />
+        </div>
+      )}
     </>
   );
 };
